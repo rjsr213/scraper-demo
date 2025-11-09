@@ -13,12 +13,7 @@ BASE = "https://books.toscrape.com/"
 class Book(BaseModel):
     title: str
     price: float = Field(..., ge=0)
-    rating: int = Field(..., ge=0, le=5)
     url: str
-
-def rating_to_int(r: str) -> int:
-    map_ = {"One":1,"Two":2,"Three":3,"Four":4,"Five":5}
-    return map_.get(r.strip(), 0)
 
 def scrape_page(driver, url: str) -> list[Book]:
     driver.get(url)
@@ -29,11 +24,10 @@ def scrape_page(driver, url: str) -> list[Book]:
     for article in soup.select("article.product_pod"):
         title = article.h3.a["title"].strip()
         price_text = article.select_one(".price_color").get_text().replace("£","")
-        rating = rating_to_int(next((c for c in article["class"] if c in ["One","Two","Three","Four","Five"]), ""))
         rel = article.h3.a["href"]
         url_abs = (BASE + rel).replace("../../../", BASE)
         try:
-            book = Book(title=title, price=float(price_text), rating=rating, url=url_abs)
+            book = Book(title=title, price=float(price_text), url=url_abs)
             out.append(book)
         except ValidationError:
             continue
